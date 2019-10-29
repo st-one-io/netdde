@@ -51,17 +51,17 @@ class NetDDEClientSerializer extends Transform {
             return;
         }
 
-        let strService, strTopic, strItem, strComputer, strUser, strProcess, 
+        let strService, strTopic, strItem, strComputer, strUser, strProcess,
             strVersion, strCmd, convPtr, convId, format, data, bAsync, bReqVal;
 
-        switch(chunk.type){
+        switch (chunk.type) {
             case C.NETDDE_CLIENT_CONNECT:
                 strService = chunk.payload.service || '';
                 strComputer = chunk.payload.computer || '';
                 strUser = chunk.payload.user || '';
                 strProcess = chunk.payload.process || '';
                 strVersion = chunk.payload.version || '';
-                
+
                 bufLen = 2 + (5 * 5) + strService.length + strComputer.length + strUser.length + strProcess.length + strVersion.length;
                 buf = Buffer.alloc(12 + bufLen);
 

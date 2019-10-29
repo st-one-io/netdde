@@ -22,7 +22,7 @@ const RGX_nullOnEnd = /\u0000$/;
  * @param {number} ptr 
  * @returns {CStringRet}
  */
-function parseCString(buf, ptr){
+function parseCString(buf, ptr) {
     debug('parseCString', ptr, buf && buf.length);
     if (buf.length - ptr < 4) throw new Error("Malformed CString - unsufficient bytes for header");
 
@@ -33,7 +33,7 @@ function parseCString(buf, ptr){
     let str = buf.toString('utf8', ptr, ptr + strlen - 1);
     ptr += strlen;
 
-    return {str, ptr};
+    return { str, ptr };
 }
 
 /**
@@ -45,7 +45,7 @@ function parseCString(buf, ptr){
  */
 function writeCString(buf, ptr, str = '') {
     debug('writeCString', ptr, buf && buf.length, str);
-    if(buf.length < ptr + str.length + 5) throw new Error("Not enough space on Buffer for string");
+    if (buf.length < ptr + str.length + 5) throw new Error("Not enough space on Buffer for string");
 
     str += '\u0000';
 
@@ -67,7 +67,7 @@ function encodeFormat(format, data) {
     debug('encodeFormat', format, data);
     if (data instanceof Buffer) return data;
 
-    switch(format){
+    switch (format) {
         case C.dataType.CF_TEXT:
             return Buffer.from(data.toString() + '\u0000', 'ascii');
         default:
@@ -84,7 +84,7 @@ function encodeFormat(format, data) {
 function decodeFormat(format, data) {
     debug('decodeFormat', format, data);
 
-    switch(format) {
+    switch (format) {
         case C.dataType.CF_TEXT:
             return data.toString('ascii').replace(RGX_nullOnEnd, '');
         case C.dataType.CF_UNICODETEXT:

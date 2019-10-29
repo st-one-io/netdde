@@ -25,7 +25,7 @@ class NetDDEClient extends EventEmitter {
         super();
         debug('new NetDDEClient');
 
-        if (!service){
+        if (!service) {
             throw new Error("Service expected!")
         }
 
@@ -118,7 +118,7 @@ class NetDDEClient extends EventEmitter {
         debug('NetDDEClient _onDDEAdvise', d);
 
         let topic = this._convTopics.get(d.convPtr);
-        if(!topic) {
+        if (!topic) {
             this.emit('error', new Error(`Unknown pointer [${d.convPtr && d.convPtr.toString(16)}] received on DDE_ADVISE`));
             return;
         }
@@ -160,16 +160,16 @@ class NetDDEClient extends EventEmitter {
      */
     async _dropConnection() {
         debug('NetDDEClient _dropConnection');
-    
+
         return new Promise(async (res, rej) => {
-            if(this._ep) {
-                await this._ep.sendPacket(C.NETDDE_CLIENT_DISCONNECT, { 
-                    service: this._config.service, 
-                    computer: this._config.computer 
+            if (this._ep) {
+                await this._ep.sendPacket(C.NETDDE_CLIENT_DISCONNECT, {
+                    service: this._config.service,
+                    computer: this._config.computer
                 });
                 this._ep.destroy();
             }
-            
+
             if (this._socket) {
                 this._socket.end();
                 this.on('close', () => res())
@@ -206,7 +206,7 @@ class NetDDEClient extends EventEmitter {
         let convPtr = this._convPtrs.get(topic);
         let convId = this._convIDs.get(topic);
 
-        if (!convPtr || !convId){
+        if (!convPtr || !convId) {
             debug('NetDDEClient _destroyConversation no-ptr-id', topic, convPtr, convId);
             return;
         }
@@ -253,7 +253,7 @@ class NetDDEClient extends EventEmitter {
     async _connectNetDDE() {
         debug('NetDDEClient _connectNetDDE');
 
-        this._ep = new NetDDEClientEndpoint(this._socket, {timeout: this._timeout});
+        this._ep = new NetDDEClientEndpoint(this._socket, { timeout: this._timeout });
         this._ep.on('error', e => this._onEndpointError(e));
         this._ep.on('dde_server_disconnect', d => this._onDDEServerDisconnect(d));
         this._ep.on('dde_disconnect', d => this._onDDEDisconnect(d));
@@ -268,7 +268,7 @@ class NetDDEClient extends EventEmitter {
             version: "v2.0"
         });
 
-        if(!res.result) {
+        if (!res.result) {
             throw new Error("Server reported error on opening connection");
         }
 

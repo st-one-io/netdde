@@ -50,7 +50,7 @@ class NetDDEClientParser extends Transform {
         }
 
         while (ptr < chunk.length) {
-            
+
             // parse Header
             let hSize = chunk.readUInt32LE(ptr);
             ptr += 4;
@@ -96,7 +96,7 @@ class NetDDEClientParser extends Transform {
                         result, convPtr, convId
                     }
                     break;
-                
+
                 case C.DDE_REQUEST:
                     result = chunk.readUInt8(ptr) != 0;
                     ptr++;
@@ -124,7 +124,7 @@ class NetDDEClientParser extends Transform {
                         convPtr, item: strItem.str, format
                     };
                     break;
-                
+
                 case C.DDE_ADVISE:
                     convPtr = chunk.readUInt32LE(ptr);
                     ptr += 4;
@@ -138,7 +138,7 @@ class NetDDEClientParser extends Transform {
                     ptr += dataLen;
                     // skip fixed true
                     ptr += 1;
-                    
+
                     payload = {
                         convPtr, item: strItem.str, format, data
                     };
@@ -152,7 +152,7 @@ class NetDDEClientParser extends Transform {
                         convPtr
                     };
                     break;
-                
+
                 case C.DDE_POKE:
                 case C.DDE_EXECUTE:
                 case C.DDE_START_ADVISE:
@@ -172,7 +172,7 @@ class NetDDEClientParser extends Transform {
                     return cb(new Error(`Unknown telegram type [${hType}] for NetDDEClientParser`));
             }
 
-            this.push({ 
+            this.push({
                 type: hType,
                 id: hId,
                 payload: payload

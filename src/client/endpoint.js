@@ -60,14 +60,14 @@ class NetDDEClientEndpoint extends EventEmitter {
 
     _onParserData(pkt) {
         debug('NetDDEClientEndpoint _onParserData', pkt);
-        
+
         let id = pkt.id;
 
         if (id == 0xffffffff) {
             // async packet
 
             let evt;
-            switch(pkt.type){
+            switch (pkt.type) {
                 case C.NETDDE_SERVER_DISCONNECT: evt = 'dde_server_disconnect'; break;
                 case C.DDE_DISCONNECT: evt = 'dde_disconnect'; break;
                 case C.DDE_ADVISE: evt = 'dde_advise'; break;
@@ -83,14 +83,14 @@ class NetDDEClientEndpoint extends EventEmitter {
             // sync packet
 
             let pktPromise = this._pktQueue.get(id);
-            if(!pktPromise){
+            if (!pktPromise) {
                 this.emit('error', new Error(`Unknown packet id [${id}] received`));
                 return;
             }
-            
+
             this._pktQueue.delete(id);
             clearTimeout(pktPromise.timeout);
-            
+
             //TODO maybe validate response packet's type to match the one we've sent
 
             pktPromise.res(pkt.payload);
@@ -99,7 +99,7 @@ class NetDDEClientEndpoint extends EventEmitter {
 
     _onTimeout(id) {
         debug('NetDDEClientEndpoint _onTimeout', id);
-        
+
         let pktPromise = this._pktQueue.get(id);
         this._pktQueue.delete(id);
 
@@ -109,7 +109,7 @@ class NetDDEClientEndpoint extends EventEmitter {
     destroy() {
         debug('NetDDEClientEndpoint destroy');
 
-        for (const pktPromise of this._pktQueue.values()){
+        for (const pktPromise of this._pktQueue.values()) {
             clearTimeout(pktPromise.timeout);
             process.nextTick(() => pktPromise.rej(new Error('Process interrupted')));
         }
@@ -130,11 +130,11 @@ class NetDDEClientEndpoint extends EventEmitter {
             let id = this._nextPktId();
             let pkt = { id, type, payload };
 
-            if (type == C.NETDDE_CLIENT_DISCONNECT 
+            if (type == C.NETDDE_CLIENT_DISCONNECT
                 || type == C.DDE_DESTROY_CONVERSATION
                 || type == C.DDE_STOP_ADVISE) {
                 // we don't have a response packet for these, so just resolve after writing
-                
+
                 this._serializer.write(pkt, err => err ? rej(err) : res());
             } else {
                 this._serializer.write(pkt);
