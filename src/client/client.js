@@ -54,6 +54,8 @@ class NetDDEClient extends EventEmitter {
         this._convTopics = new Map();
         /** Maps topic -> ID */
         this._convIDs = new Map();
+        /** locks when creating topics */
+        this._convLocks = new Map();
     }
 
     _onSocketError(e) {
@@ -151,6 +153,13 @@ class NetDDEClient extends EventEmitter {
             this._socket.destroy();
         }
 
+        if (this._convLocks) {
+            for (const lock of this._convLocks.values()) {
+                lock.reset();
+            }
+            this._convLocks.clear();
+        }
+
         this._reset();
         this.emit('close')
     }
@@ -162,6 +171,14 @@ class NetDDEClient extends EventEmitter {
         debug('NetDDEClient _dropConnection');
 
         return new Promise(async (res, rej) => {
+
+            if (this._convLocks) {
+                for (const lock of this._convLocks.values()) {
+                    lock.reset();
+                }
+                this._convLocks.clear();
+            }
+
             if (this._ep) {
                 await this._ep.sendPacket(C.NETDDE_CLIENT_DISCONNECT, {
                     service: this._config.service,
@@ -236,8 +253,24 @@ class NetDDEClient extends EventEmitter {
      */
     async _getConversation(topic) {
         debug('NetDDEClient _getConversation', topic);
+        
         if (!this._convPtrs.has(topic)) {
-            await this._createConversation(topic);
+            
+            //get lock to prevent creating multiple conversations to the same topic
+            let lock = this._convLocks.get(topic)
+            if (!lock) {
+                lock = new helper.AwaitLock();
+                this._convLocks.set(topic, lock);
+            }
+
+            await lock.acquire();
+            try {
+                if (!this._convPtrs.has(topic)) {
+                    await this._createConversation(topic);
+                } //else we already have the conversation, so do nothing
+            } finally {
+                lock.release();
+            }
         }
 
         return {

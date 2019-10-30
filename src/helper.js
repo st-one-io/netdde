@@ -94,6 +94,53 @@ function decodeFormat(format, data) {
     }
 }
 
+
+class AwaitLock {
+
+    constructor() {
+        /** @type {{ res: (value?: void | PromiseLike<void>) => void; rej: (reason?: any) => void; }[]} */
+        this.queue = [];
+        this.locked = false;
+    }
+
+    /**
+     * Gets resolved when lock is acquired
+     * @returns {Promise<void>}
+     */
+    acquire() {
+        return new Promise((res, rej) => {
+            if (this.locked) {
+                this.queue.push({ res, rej });
+            } else {
+                this.locked = true;
+                res();
+            }
+        });
+    }
+
+    /**
+     * Releases the acquired lock
+     */
+    release() {
+        if (this.queue.length > 0) {
+            let prom = this.queue.shift();
+            process.nextTick(() => prom.res());
+        } else {
+            this.locked = false;
+        }
+    }
+
+    /**
+     * Resets all acquired locks
+     */
+    reset() {
+        for (const prom of this.queue) {
+            process.nextTick(() => prom.rej(new Error("Lock resetted")));
+        }
+        this.queue.length = 0;
+    }
+}
+
 module.exports = {
-    parseCString, writeCString, encodeFormat, decodeFormat
+    parseCString, writeCString, encodeFormat, decodeFormat, AwaitLock
 }
