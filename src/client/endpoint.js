@@ -103,7 +103,9 @@ class NetDDEClientEndpoint extends EventEmitter {
         let pktPromise = this._pktQueue.get(id);
         this._pktQueue.delete(id);
 
-        pktPromise.rej(new Error(`Timeout waiting for answer of request type [${pktPromise}]`));
+        this.emit('timeout', id);
+
+        pktPromise.rej(new Error(`Timeout waiting for answer of request ID [${id}]`));
     }
 
     destroy() {

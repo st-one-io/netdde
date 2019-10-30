@@ -61,8 +61,8 @@ class NetDDEClient extends EventEmitter {
     _onSocketError(e) {
         debug('NetDDEClient _onSocketError', e);
 
-        this.emit('error', e);
         this._destroy();
+        this.emit('error', e);
     }
 
     _onSocketClose() {
@@ -71,9 +71,17 @@ class NetDDEClient extends EventEmitter {
         this._destroy();
     }
 
+    _onEndpointTimeout() {
+        debug('NetDDEClient _onEndpointTimeout');
+
+        this._destroy();
+    }
+
     _onEndpointError(e) {
         debug('NetDDEClient _onEndpointError', e);
 
+        this._destroy();
+        this.emit('error', e);
     }
 
     /**
@@ -170,7 +178,7 @@ class NetDDEClient extends EventEmitter {
     async _dropConnection() {
         debug('NetDDEClient _dropConnection');
 
-        return new Promise(async (res, rej) => {
+        let pDisconnect = new Promise(async (res, rej) => {
 
             if (this._convLocks) {
                 for (const lock of this._convLocks.values()) {
@@ -194,6 +202,14 @@ class NetDDEClient extends EventEmitter {
                 res();
             }
         });
+
+        let pTimeout = new Promise((res, rej) => {
+            setTimeout(() => {
+                rej(new Error("Timeout while disconnecting"));
+                this._destroy();
+            }, 5000)
+        });
+        return Promise.race([pDisconnect, pTimeout]);
     }
 
     /**
@@ -288,6 +304,7 @@ class NetDDEClient extends EventEmitter {
 
         this._ep = new NetDDEClientEndpoint(this._socket, { timeout: this._timeout });
         this._ep.on('error', e => this._onEndpointError(e));
+        this._ep.on('timeout', () => this._onEndpointTimeout());
         this._ep.on('dde_server_disconnect', d => this._onDDEServerDisconnect(d));
         this._ep.on('dde_disconnect', d => this._onDDEDisconnect(d));
         this._ep.on('dde_advise', d => this._onDDEAdvise(d));
@@ -324,7 +341,11 @@ class NetDDEClient extends EventEmitter {
             this._socket = net.createConnection(this._port, this._host);
 
             await new Promise((res, rej) => {
-                let onErr = e => rej(e);
+                let onErr = e => {
+                    this._connectionState = CONN_DISCONNECTED;
+                    this._socket.destroy();
+                    rej(e);
+                };
                 this._socket.on('error', onErr)
                 this._socket.on('connect', () => {
                     this._socket.removeListener('error', onErr);
