@@ -12,6 +12,10 @@
     "netdde"
   ],
   "author": "Guilherme Francescon <guilherme.francescon@netsmarttech.com>",
+  "repository": {
+    "url": "https://github.com/netsmarttech/netdde"
+  },
+  "homepage": "https://github.com/netsmarttech/netdde",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "chai": "^4.2.0",
