@@ -9,6 +9,10 @@ const util = require('util');
 const net = require('net');
 const os = require('os');
 const debug = util.debuglog('netdde');
+let netKeepAlive;
+try {
+    netKeepAlive = require('net-keepalive');
+} catch (e) {}
 
 const C = require('../constants');
 const NetDDEClientEndpoint = require('./endpoint');
@@ -352,6 +356,14 @@ class NetDDEClient extends EventEmitter {
                     res();
                 });
             });
+
+            try { //failing to set keepalives shouldn't fail the connection
+                this._socket.setKeepAlive(true, this._timeout);
+                if (netKeepAlive) {
+                    netKeepAlive.setKeepAliveInterval(this._socket, this._timeout);
+                    netKeepAlive.setKeepAliveProbes(this._socket, 3);
+                }
+            } catch (e) {}
 
             this._socket.on('error', e => this._onSocketError(e));
             this._socket.on('close', () => this._onSocketClose());
